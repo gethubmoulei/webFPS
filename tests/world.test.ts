@@ -116,11 +116,34 @@ describe('实际地图导航与视线', () => {
 });
 
 describe('人机生命周期与反应', () => {
+  it('致命命中后逐渐倒地，三秒后隐藏，尸体不会行动或再次结算击杀', () => {
+    const player = new Player(), bot = new Bot(0,new THREE.Scene(),world.spawns[1]);
+    const position = bot.position.clone(); const shoot = vi.fn();
+    bot.mesh.rotation.y = 1.2;
+    expect(bot.hit(100)).toBe(true); expect(bot.mesh.visible).toBe(true);
+    expect(bot.mesh.rotation.x).toBe(0);
+    bot.update(0.3,world,player,[bot],shoot);
+    expect(bot.mesh.rotation.x).toBeGreaterThan(0); expect(bot.mesh.rotation.x).toBeLessThan(Math.PI / 2);
+    expect(bot.mesh.rotation.y).toBe(1.2); expect(bot.position.equals(position)).toBe(true);
+    bot.update(0.4,world,player,[bot],shoot);
+    expect(bot.mesh.rotation.x).toBeCloseTo(Math.PI / 2); expect(bot.mesh.visible).toBe(true);
+    const bounds = new THREE.Box3().setFromObject(bot.mesh);
+    expect(bounds.min.y).toBeGreaterThanOrEqual(position.y - 0.01);
+    expect(bot.hit(100)).toBe(false);
+    bot.update(2.29,world,player,[bot],shoot); expect(bot.mesh.visible).toBe(true);
+    bot.update(0.02,world,player,[bot],shoot); expect(bot.mesh.visible).toBe(false);
+    expect(bot.health.alive).toBe(false); expect(shoot).not.toHaveBeenCalled();
+  });
+
   it('阵亡四秒后重生，恢复模型与血量', () => {
     const player = new Player(), bot = new Bot(0,new THREE.Scene(),world.spawns[1]);
     expect(bot.hit(100)).toBe(true); expect(bot.hit(100)).toBe(false);
     bot.update(3.9,world,player,[bot],()=>{}); expect(bot.health.alive).toBe(false); expect(bot.mesh.visible).toBe(false);
     bot.update(0.11,world,player,[bot],()=>{}); expect(bot.health.value).toBe(100); expect(bot.mesh.visible).toBe(true);
+    expect(bot.mesh.rotation.x).toBe(0); expect(bot.mesh.rotation.z).toBe(0);
+    expect(bot.mesh.position.equals(bot.position)).toBe(true);
+    expect(bot.hit(100)).toBe(true); bot.update(0.3,world,player,[bot],()=>{});
+    expect(bot.mesh.visible).toBe(true); expect(bot.mesh.rotation.x).toBeLessThan(Math.PI / 2);
   });
   it('发现玩家后先反应，再按不快于每秒一发的速度射击', () => {
     const player = new Player(), bot = new Bot(0,new THREE.Scene(),new THREE.Vector3(0,0.025,19));

@@ -58,6 +58,21 @@ describe('鼠标原始输入', () => {
 });
 
 describe('鼠标灵敏度', () => {
+  it('狙击开镜按基础灵敏度的 35% 转向，退出开镜立即恢复且不改动保存值', () => {
+    let scoped = false;
+    const input = new Input(new EventTarget() as HTMLCanvasElement, () => scoped);
+    input.locked = true; input.setSensitivity(2);
+    move(100, 50);
+    expect(input.yaw).toBeCloseTo(-0.4); expect(input.pitch).toBeCloseTo(-0.2);
+    scoped = true;
+    move(100, 50);
+    expect(input.yaw).toBeCloseTo(-0.54); expect(input.pitch).toBeCloseTo(-0.27);
+    scoped = false;
+    move(100, 50);
+    expect(input.yaw).toBeCloseTo(-0.94); expect(input.pitch).toBeCloseTo(-0.47);
+    expect(input.sensitivity).toBe(2); expect(storage.get(storageKey)).toBe('2');
+  });
+
   it('默认保留原手感，调节后水平与垂直转向按相同倍率变化', () => {
     const input = createInput(); input.locked = true;
     move(100, 50);

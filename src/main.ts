@@ -53,7 +53,7 @@ export class Game {
     sun.shadow.camera.near = 1; sun.shadow.camera.far = 100; sun.shadow.normalBias = 0.03; sun.shadow.bias = -0.00015; this.scene.add(sun);
     this.world = new World(this.scene);
     this.bots = [1,2,3,5].map((spawn, id) => new Bot(id, this.scene, this.world.spawns[spawn]));
-    this.input = new Input(this.renderer.domElement);
+    this.input = new Input(this.renderer.domElement, () => this.aiming && this.arsenal.selected === 'sniper');
     this.hud = new HUD(app); this.hud.phase('ready');
     this.hud.onStart(() => void this.start());
     this.hud.onSound(() => this.toggleSound());

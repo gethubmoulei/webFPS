@@ -14,7 +14,7 @@ export class Input {
   locked = false;
   sensitivity = MOUSE_SENSITIVITY.default;
   onLockChange: (locked: boolean) => void = () => {};
-  constructor(readonly canvas: HTMLCanvasElement) {
+  constructor(readonly canvas: HTMLCanvasElement, private readonly isScoped: () => boolean = () => false) {
     try {
       const saved = Number(localStorage.getItem(SENSITIVITY_STORAGE_KEY) ?? NaN);
       if (Number.isFinite(saved) && saved >= MOUSE_SENSITIVITY.min && saved <= MOUSE_SENSITIVITY.max) this.sensitivity = saved;
@@ -29,8 +29,9 @@ export class Input {
     document.addEventListener('keyup', e => this.keys.delete(e.code));
     document.addEventListener('mousemove', e => {
       if (!this.locked) return;
-      this.yaw -= e.movementX * 0.002 * this.sensitivity;
-      this.pitch = Math.max(-1.45, Math.min(1.45, this.pitch - e.movementY * 0.002 * this.sensitivity));
+      const speed = 0.002 * this.sensitivity * (this.isScoped() ? MOUSE_SENSITIVITY.sniperAimScale : 1);
+      this.yaw -= e.movementX * speed;
+      this.pitch = Math.max(-1.45, Math.min(1.45, this.pitch - e.movementY * speed));
     });
     document.addEventListener('mousedown', e => {
       if (!this.locked) return;
