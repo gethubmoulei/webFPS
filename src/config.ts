@@ -34,4 +34,5 @@ export const WEAPONS: Record<WeaponId, WeaponConfig> = {
 export const BOT = { damage: 8, headshotMultiplier: 1.5 };
 export type GamePhase = 'ready' | 'playing' | 'paused';
 export type BotMode = 'patrol' | 'chase' | 'attack' | 'search' | 'dead';
+export const MOUSE_SENSITIVITY = { min: 0.1, max: 3, step: 0.1, default: 1 };
 export const FIXED_STEP = 1 / 120;

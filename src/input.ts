@@ -1,3 +1,7 @@
+import { MOUSE_SENSITIVITY } from './config';
+
+const SENSITIVITY_STORAGE_KEY = 'range07.mouseSensitivity';
+
 export class Input {
   keys = new Set<string>();
   pressed = new Set<string>();
@@ -8,8 +12,13 @@ export class Input {
   yaw = 0;
   pitch = 0;
   locked = false;
+  sensitivity = MOUSE_SENSITIVITY.default;
   onLockChange: (locked: boolean) => void = () => {};
   constructor(readonly canvas: HTMLCanvasElement) {
+    try {
+      const saved = Number(localStorage.getItem(SENSITIVITY_STORAGE_KEY) ?? NaN);
+      if (Number.isFinite(saved) && saved >= MOUSE_SENSITIVITY.min && saved <= MOUSE_SENSITIVITY.max) this.sensitivity = saved;
+    } catch { /* 本地存储不可用时保留默认值。 */ }
     document.addEventListener('keydown', e => {
       if (!this.locked) return;
       if (e.code === 'Escape') { this.unlock(); return; }
@@ -20,8 +29,8 @@ export class Input {
     document.addEventListener('keyup', e => this.keys.delete(e.code));
     document.addEventListener('mousemove', e => {
       if (!this.locked) return;
-      this.yaw -= e.movementX * 0.002;
-      this.pitch = Math.max(-1.45, Math.min(1.45, this.pitch - e.movementY * 0.002));
+      this.yaw -= e.movementX * 0.002 * this.sensitivity;
+      this.pitch = Math.max(-1.45, Math.min(1.45, this.pitch - e.movementY * 0.002 * this.sensitivity));
     });
     document.addEventListener('mousedown', e => {
       if (!this.locked) return;
@@ -41,7 +50,21 @@ export class Input {
     window.addEventListener('blur', () => this.unlock());
     document.addEventListener('visibilitychange', () => { if (document.hidden) this.unlock(); });
   }
-  async lock() { await this.canvas.requestPointerLock(); }
+  async lock() {
+    try {
+      // 优先使用原始相对位移，避免系统鼠标加速影响转向。
+      await this.canvas.requestPointerLock({ unadjustedMovement: true });
+    } catch (error) {
+      if (!(error instanceof DOMException) || error.name !== 'NotSupportedError') throw error;
+      await this.canvas.requestPointerLock();
+    }
+  }
+  setSensitivity(value: number) {
+    if (!Number.isFinite(value)) return;
+    this.sensitivity = Math.max(MOUSE_SENSITIVITY.min, Math.min(MOUSE_SENSITIVITY.max, value));
+    try { localStorage.setItem(SENSITIVITY_STORAGE_KEY, String(this.sensitivity)); }
+    catch { /* 本地存储不可用时仍允许本次调节。 */ }
+  }
   unlock() { this.clear(); if (this.locked) document.exitPointerLock(); }
   consume(code: string) { const value = this.pressed.has(code); this.pressed.delete(code); return value; }
   clear() { this.keys.clear(); this.pressed.clear(); this.mouseDown = false; this.rightDown = false; this.shotPressed = false; this.wheel = 0; }

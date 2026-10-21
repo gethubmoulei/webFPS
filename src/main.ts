@@ -57,8 +57,11 @@ export class Game {
     this.hud = new HUD(app); this.hud.phase('ready');
     this.hud.onStart(() => void this.start());
     this.hud.onSound(() => this.toggleSound());
+    this.hud.onSensitivity(this.input.sensitivity, value => this.input.setSensitivity(value));
     this.input.onLockChange = locked => {
       this.phase = locked ? 'playing' : this.phase === 'ready' ? 'ready' : 'paused';
+      // 原始输入不支持时可能先触发错误事件；回退锁定成功后清除该提示。
+      if (locked) this.hud.setText('start-help', '点击进入 · 鼠标控制视角 · ESC 暂停');
       this.accumulator = 0; this.lastFrame = performance.now(); this.hud.phase(this.phase);
     };
     document.addEventListener('pointerlockerror', () => this.hud.error('鼠标锁定失败，请使用桌面浏览器并再次点击开始。'));

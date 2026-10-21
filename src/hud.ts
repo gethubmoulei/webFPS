@@ -2,7 +2,7 @@ import type { Arsenal } from './combat';
 import type { Player } from './player';
 import type { Bot } from './bots';
 import type { World } from './world';
-import type { GamePhase } from './config';
+import { MOUSE_SENSITIVITY, type GamePhase } from './config';
 import { DamageIndicators, damageShape, screenAngle } from './damage-indicators';
 
 const icon = '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M5 12V5h7m8 0h7v7m0 8v7h-7m-8 0H5v-7M16 8v16M8 16h16" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="16" r="4" stroke="currentColor"/></svg>';
@@ -22,7 +22,7 @@ export class HUD {
       <div id="scope" class="scope" aria-hidden="true"></div>
       <header class="topbar"><a class="brand" href="./" aria-label="RANGE 07 首页">${icon}<span>RANGE<span class="brand-number">07</span></span><i></i><small>战术训练场</small></a><div class="session"><span class="status-dot"></span>LOCAL SESSION<span class="divider">/</span><span id="phase-label">待命</span></div><button id="sound" class="sound" title="切换音效" aria-label="关闭音效">声音 <span id="sound-state">开启</span><span class="sound-bars">▂▅▃▇</span></button></header>
       <div class="top-game"><div class="sector"><span>训练区域</span><strong>SECTOR 07 <i>/ 自由交战</i></strong></div><div class="scoreboard"><div><span>击杀</span><strong id="kills">00</strong></div><b>:</b><div><span>死亡</span><strong id="deaths">00</strong></div><i></i><div><span>在线人机</span><strong><em id="bots-alive">4</em><small>/ 4</small></strong></div></div></div>
-      <section id="menu" class="menu"><div class="brief"><div class="eyebrow"><span></span> FIELD EXERCISE — 001</div><h1>准备好，<br>进入<span>训练场。</span></h1><p class="intro">检查装备，寻找掩体。<br>在这片沙地上，练习你的下一次精准命中。</p><div class="tags"><span>第一人称</span><span>自由交战</span><span>4 名人机</span></div><button id="start" class="start"><span id="start-label">开始训练</span><span class="button-arrow">↗</span></button><p id="start-help" class="start-help"><span class="tiny-mouse">◉</span> 点击进入 · 鼠标控制视角 · ESC 暂停</p><div class="mission"><span class="mission-index">01 /</span><div><strong>没有倒计时。只有下一次进步。</strong><p>无限重生 · 四种武器 · 真实掩体碰撞</p></div></div></div><aside class="map-card"><div class="card-heading"><span class="status-dot"></span>区域简报<span class="card-code">R07—TACTICAL</span></div><canvas id="minimap" width="480" height="480" aria-label="训练场地图"></canvas><div class="map-caption"><strong>沙地训练基地</strong><span>60 × 60 M</span></div><div class="map-legend"><span><i class="legend-player"></i>你的位置</span><span><i class="legend-enemy"></i>敌方单位</span><span>高台 / 建筑 / 掩体</span></div></aside></section>
+      <section id="menu" class="menu"><div class="brief"><div class="eyebrow"><span></span> FIELD EXERCISE — 001</div><h1>准备好，<br>进入<span>训练场。</span></h1><p class="intro">检查装备，寻找掩体。<br>在这片沙地上，练习你的下一次精准命中。</p><div class="tags"><span>第一人称</span><span>自由交战</span><span>4 名人机</span></div><button id="start" class="start"><span id="start-label">开始训练</span><span class="button-arrow">↗</span></button><p id="start-help" class="start-help"><span class="tiny-mouse">◉</span> 点击进入 · 鼠标控制视角 · ESC 暂停</p><div class="sensitivity"><div class="sensitivity-heading"><label for="mouse-sensitivity">鼠标灵敏度</label><output id="sensitivity-value" for="mouse-sensitivity"></output></div><input id="mouse-sensitivity" type="range" min="${MOUSE_SENSITIVITY.min}" max="${MOUSE_SENSITIVITY.max}" step="${MOUSE_SENSITIVITY.step}" value="${MOUSE_SENSITIVITY.default}" aria-describedby="sensitivity-help"><p id="sensitivity-help">低速更精细 · 高速转向更快</p></div><div class="mission"><span class="mission-index">01 /</span><div><strong>没有倒计时。只有下一次进步。</strong><p>无限重生 · 四种武器 · 真实掩体碰撞</p></div></div></div><aside class="map-card"><div class="card-heading"><span class="status-dot"></span>区域简报<span class="card-code">R07—TACTICAL</span></div><canvas id="minimap" width="480" height="480" aria-label="训练场地图"></canvas><div class="map-caption"><strong>沙地训练基地</strong><span>60 × 60 M</span></div><div class="map-legend"><span><i class="legend-player"></i>你的位置</span><span><i class="legend-enemy"></i>敌方单位</span><span>高台 / 建筑 / 掩体</span></div></aside></section>
       <div id="crosshair" class="crosshair"><i></i><i></i><i></i><i></i><b></b></div><div id="hitmarker" class="hitmarker">×</div><div id="hit-info" class="hit-info"></div><div id="hurt" class="hurt"></div><canvas id="damage-ring" class="damage-ring" aria-hidden="true"></canvas>
       <div id="notice" class="notice"></div><div id="death-screen" class="death-screen" hidden><span>训练尚未结束</span><strong>重新集结</strong><p><b id="respawn-count">3</b> 秒后返回训练场</p></div>
       <div id="kill-feed" class="kill-feed"></div>
@@ -36,6 +36,17 @@ export class HUD {
   }
   onStart(fn: () => void) { this.el.start.addEventListener('click', fn); }
   onSound(fn: () => void) { this.el.sound.addEventListener('click', fn); }
+
+  onSensitivity(value: number, fn: (value: number) => void) {
+    const slider = this.el['mouse-sensitivity'] as HTMLInputElement;
+    const display = () => {
+      const text = `${Number(slider.value).toFixed(1)} 倍`;
+      this.setText('sensitivity-value', text);
+      slider.setAttribute('aria-valuetext', text);
+    };
+    slider.value = String(value); display();
+    slider.addEventListener('input', () => { display(); fn(Number(slider.value)); });
+  }
   setText(id: string, value: string) { if (this.cached[id] !== value) { this.el[id].textContent = value; this.cached[id] = value; } }
   hitmarker(damage: number, headshot: boolean, distance: number, pellets = 1) {
     const count = pellets > 1 ? ` · ${pellets} 弹丸` : '';
