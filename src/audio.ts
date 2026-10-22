@@ -29,5 +29,10 @@ export class GameAudio {
     source.connect(gain); gain.connect(ctx.destination); source.start();
   }
   hit(headshot = false) { this.tone(headshot ? 1480 : 1100, headshot ? 0.09 : 0.07, 0.04, 'sine', headshot ? 920 : 700); }
+
+  hurt() {
+    this.tone(160, 0.18, 0.12, 'sine', 45);
+    this.tone(320, 0.07, 0.035, 'triangle', 80);
+  }
   reload() { this.tone(350, 0.09, 0.04, 'square', 150); }
 }

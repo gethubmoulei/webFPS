@@ -172,6 +172,7 @@ export class Game {
         const feet = this.player.feet, before = this.player.health.value;
         const died = this.player.takeDamage(damage);
         if (this.player.health.value < before) {
+          this.audio.hurt();
           const dx = origin.x - feet.x, dz = origin.z - feet.z;
           if (Math.hypot(dx, dz) > 0.01) this.hud.hitFrom(bearingFromDelta(dx, dz), damage);
         }
